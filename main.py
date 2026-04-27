@@ -19,7 +19,8 @@ class Szkola:
     def __init__(self, nazwa):
         self.nazwa = nazwa
         self.klasy = []
-        self.nauczyciele = []  # <-- nowa, poprawna kolekcja nauczycieli
+        self.nauczyciele = []
+        self.przedmioty = []
 
     def dodaj_klase(self, Klasa):
         self.klasy.append(Klasa)
@@ -27,11 +28,16 @@ class Szkola:
     def dodaj_nauczyciela(self, Nauczyciel):
         self.nauczyciele.append(Nauczyciel)
 
+    def dodaj_przedmiot(self, nazwa_przedmiotu):
+        if nazwa_przedmiotu and nazwa_przedmiotu not in self.przedmioty:
+            self.przedmioty.append(nazwa_przedmiotu)
+
     def __str__(self):
         return (
             f"Szkola: {self.nazwa}, "
             f"Klasy: {[str(klasa_obj) for klasa_obj in self.klasy]}, "
-            f"Nauczyciele: {[str(nauczyciel_obj) for nauczyciel_obj in self.nauczyciele]}"
+            f"Nauczyciele: {[str(nauczyciel_obj) for nauczyciel_obj in self.nauczyciele]}, "
+            f"Przedmioty: {self.przedmioty}"
         )
 
 
@@ -46,12 +52,12 @@ class Osoba:
 
 
 class Nauczyciel(Osoba):
-    def __init__(self, imie, nazwisko, data_urodzenia, przedmiot):
+    def __init__(self, imie, nazwisko, data_urodzenia, przedmiot=None):
         super().__init__(imie, nazwisko, data_urodzenia)
-        self.przedmiot = [przedmiot]
+        self.przedmiot = [przedmiot] if przedmiot else []
 
     def __str__(self):
-        return f"Nauczyciel: {super().__str__()}, Przedmiot: {self.przedmiot}"
+        return f"Nauczyciel: {super().__str__()}, Przedmioty: {self.przedmiot}"
 
 
 class Uczen(Osoba):
@@ -91,13 +97,14 @@ class Klasa:
         self.nazwa = nazwa
         self.wychowawca = wychowawca
         self.uczniowie = []
-        self.przedmioty = {}
+        self.przedmioty = []
 
     def dodaj_ucznia(self, Uczen):
         self.uczniowie.append(Uczen)
 
-    def dodaj_przedmiot(self, nazwa, Nauczyciel):
-        self.przedmioty[nazwa] = Nauczyciel
+    def dodaj_przedmiot(self, nazwa):
+        if nazwa and nazwa not in self.przedmioty:
+            self.przedmioty.append(nazwa)
 
     def __str__(self):
         return f"Klasa: {self.nazwa}, Wychowawca: {self.wychowawca}, Uczniowie: {[str(Uczen) for Uczen in self.uczniowie]}"
@@ -187,8 +194,20 @@ class DziennikSzkolny:
     def dodaj_Nauczyciela_do_szkoly(self, Szkola, Nauczyciel):
         Szkola.dodaj_nauczyciela(Nauczyciel)
 
+    def dodaj_przedmiot_do_szkoly(self, Szkola, przedmiot):
+        Szkola.dodaj_przedmiot(przedmiot)
+
+    def ustaw_przedmioty_klasy(self, Szkola, Klasa, przedmioty):
+        dozwolone = set(getattr(Szkola, "przedmioty", []))
+        Klasa.przedmioty = [p for p in przedmioty if p in dozwolone]
+
     def dodaj_przedmiot_do_Nauczyciela(self, Nauczyciel, przedmiot):
-        Nauczyciel.przedmiot.append(przedmiot)
+        if przedmiot and przedmiot not in Nauczyciel.przedmiot:
+            Nauczyciel.przedmiot.append(przedmiot)
+
+    def ustaw_przedmioty_Nauczyciela(self, Szkola, Nauczyciel, przedmioty):
+        dozwolone = set(getattr(Szkola, "przedmioty", []))
+        Nauczyciel.przedmiot = [p for p in przedmioty if p in dozwolone]
 
     def ustaw_wychowawce_do_klasy(self, Klasa, wychowawca):
         Klasa.wychowawca = wychowawca
@@ -203,9 +222,13 @@ class DziennikSzkolny:
             for klasa_obj in szkola_obj.klasy:
                 if isinstance(klasa_obj, Klasa):
                     print(f"  Klasa: {klasa_obj.nazwa} | Wychowawca: {klasa_obj.wychowawca}")
+                    if klasa_obj.przedmioty:
+                        print(f"    Przedmioty klasy: {', '.join(klasa_obj.przedmioty)}")
                     print(f"    Liczba uczniów: {len(klasa_obj.uczniowie)}")
                     for uczen_obj in klasa_obj.uczniowie:
                         print(f"       {uczen_obj.imie} {uczen_obj.nazwisko} (nr {uczen_obj.numer_ucznia})")
+            if szkola_obj.przedmioty:
+                print(f"\n  Przedmioty szkoly: {', '.join(szkola_obj.przedmioty)}")
 
     def wyswietl_oceny_ucznia(self, Uczen):
         self._wyswietl_liste_ocen(Uczen, "OCENY")
@@ -285,7 +308,10 @@ class DziennikSzkolny:
         else:
             for idx, nauczyciel_obj in enumerate(nauczyciele, 1):
                 print(f"  {idx}. {nauczyciel_obj.imie} {nauczyciel_obj.nazwisko}")
-                print(f"     Przedmiot: {nauczyciel_obj.przedmiot}")
+                if nauczyciel_obj.przedmiot:
+                    print(f"     Przedmioty: {', '.join(nauczyciel_obj.przedmiot)}")
+                else:
+                    print("     Przedmioty: brak")
                 print(f"     Data urodzenia: {nauczyciel_obj.data_urodzenia}")
         print("=" * 80)
 
@@ -322,7 +348,6 @@ def uczen_do_slownika(uczen_obj):
 
 
 def _normalizuj_oceny_z_json(dane):
-    # Nowy format: lista wpisow {przedmiot, ocena}
     oceny_raw = dane.get("oceny", [])
 
     if isinstance(oceny_raw, list):
@@ -338,7 +363,6 @@ def _normalizuj_oceny_z_json(dane):
         if wynik:
             return wynik
 
-    # Kompatybilnosc: stary slownik ocen {przedmiot: ocena}
     if isinstance(oceny_raw, dict):
         return [{"przedmiot": p, "ocena": o} for p, o in oceny_raw.items()]
 
@@ -354,7 +378,6 @@ def uczen_ze_slownika(dane):
         dane.get("Klasa", ""),
     )
 
-    # Migracja starego formatu: jesli istnieje historia_ocen, traktuj ja jako glowna liste ocen.
     historia_raw = dane.get("historia_ocen", [])
     if isinstance(historia_raw, list) and historia_raw:
         oceny_z_historii = []
@@ -393,7 +416,13 @@ def klasa_do_slownika(klasa_obj):
 
 def klasa_ze_slownika(dane):
     klasa_obj = Klasa(dane.get("nazwa", ""), dane.get("wychowawca", ""))
-    klasa_obj.przedmioty = dane.get("przedmioty", {})
+    przedmioty = dane.get("przedmioty", [])
+    if isinstance(przedmioty, dict):
+        klasa_obj.przedmioty = list(przedmioty.keys())
+    elif isinstance(przedmioty, list):
+        klasa_obj.przedmioty = przedmioty
+    else:
+        klasa_obj.przedmioty = []
     for uczen_dane in dane.get("uczniowie", []):
         klasa_obj.dodaj_ucznia(uczen_ze_slownika(uczen_dane))
     return klasa_obj
@@ -404,13 +433,17 @@ def nauczyciel_do_slownika(nauczyciel_obj):
         "imie": nauczyciel_obj.imie,
         "nazwisko": nauczyciel_obj.nazwisko,
         "data_urodzenia": nauczyciel_obj.data_urodzenia,
-        "przedmiot": nauczyciel_obj.przedmiot,
+        "przedmioty": nauczyciel_obj.przedmiot,
     }
 
-
 def nauczyciel_ze_slownika(dane):
-    przedmioty = dane.get("przedmiot", [])
-    pierwszy_przedmiot = przedmioty[0] if przedmioty else ""
+    przedmioty = dane.get("przedmioty", dane.get("przedmiot", []))
+    if isinstance(przedmioty, str):
+        przedmioty = [przedmioty] if przedmioty else []
+    elif not isinstance(przedmioty, list):
+        przedmioty = []
+
+    pierwszy_przedmiot = przedmioty[0] if przedmioty else None
     nauczyciel_obj = Nauczyciel(
         dane.get("imie", ""),
         dane.get("nazwisko", ""),
@@ -420,11 +453,11 @@ def nauczyciel_ze_slownika(dane):
     nauczyciel_obj.przedmiot = przedmioty
     return nauczyciel_obj
 
-
 def szkola_do_slownika(szkola_obj):
     return {
         "nazwa": szkola_obj.nazwa,
         "klasy": [klasa_do_slownika(klasa_obj) for klasa_obj in szkola_obj.klasy],
+        "przedmioty": szkola_obj.przedmioty,
         "nauczyciele": [
             nauczyciel_do_slownika(nauczyciel_obj) for nauczyciel_obj in szkola_obj.nauczyciele
         ],
@@ -433,6 +466,9 @@ def szkola_do_slownika(szkola_obj):
 
 def szkola_ze_slownika(dane):
     szkola_obj = Szkola(dane.get("nazwa", ""))
+    przedmioty = dane.get("przedmioty", [])
+    if isinstance(przedmioty, list):
+        szkola_obj.przedmioty = przedmioty
     for klasa_dane in dane.get("klasy", []):
         szkola_obj.dodaj_klase(klasa_ze_slownika(klasa_dane))
     for nauczyciel_dane in dane.get("nauczyciele", []):
@@ -467,7 +503,6 @@ def wczytaj_dziennik(sciezka=DATA_FILE):
             dane = json.load(plik)
         return dziennik_ze_slownika(dane)
     except (json.JSONDecodeError, OSError, TypeError, ValueError):
-        # Gdy plik jest uszkodzony, program startuje od pustych danych.
         return DziennikSzkolny()
 
 
@@ -482,7 +517,7 @@ def pause():
 def czytaj_klawisz():
     key = msvcrt.getch()
     if key in (b"\x00", b"\xe0"):
-        return ("ARROW", msvcrt.getch())  # b'H' gora, b'P' dol
+        return ("ARROW", msvcrt.getch())
     if key == b"\r":
         return ("ENTER", None)
     if key == b"\x1b":
@@ -516,6 +551,39 @@ def menu_strzalki(tytul, opcje):
             return None
 
 
+def menu_wielokrotnego_wyboru(tytul, opcje, zaznaczone_poczatkowe=None):
+    if not opcje:
+        return []
+
+    zaznaczone = set(zaznaczone_poczatkowe or [])
+    index = 0
+
+    while True:
+        clear()
+        print(f"=== {tytul} ===")
+        print("Strzalki GORA/DOL, ENTER = zaznacz/odznacz, ESC = zatwierdz\n")
+
+        for i, nazwa in enumerate(opcje):
+            aktywna = ">>" if i == index else "  "
+            check = "✓ " if nazwa in zaznaczone else ""
+            print(f"{aktywna} {check}{nazwa}")
+
+        typ, val = czytaj_klawisz()
+        if typ == "ARROW":
+            if val == b"H":
+                index = (index - 1) % len(opcje)
+            elif val == b"P":
+                index = (index + 1) % len(opcje)
+        elif typ == "ENTER":
+            nazwa = opcje[index]
+            if nazwa in zaznaczone:
+                zaznaczone.remove(nazwa)
+            else:
+                zaznaczone.add(nazwa)
+        elif typ == "ESC":
+            return [n for n in opcje if n in zaznaczone]
+
+
 def znajdz_szkole_po_nazwie(dziennik, nazwa):
     for szkola_obj in dziennik.szkoly:
         if szkola_obj.nazwa == nazwa:
@@ -540,11 +608,17 @@ def znajdz_ucznia_po_numerze(dziennik, numer_ucznia):
     return None
 
 
+def znajdz_klase_ucznia(dziennik, uczen):
+    for szkola_obj in dziennik.szkoly:
+        for klasa_obj in szkola_obj.klasy:
+            if isinstance(klasa_obj, Klasa) and uczen in klasa_obj.uczniowie:
+                return szkola_obj, klasa_obj
+    return None, None
+
+
 def Nauczyciele_w_szkole(szkola_obj):
-    # preferowane źródło po poprawce:
     if hasattr(szkola_obj, "nauczyciele"):
         return szkola_obj.nauczyciele
-    # kompatybilność wstecz (stare dane):
     return [n for n in szkola_obj.klasy if isinstance(n, Nauczyciel)]
 
 
@@ -573,7 +647,10 @@ def wybierz_Nauczyciela(szkola_obj):
     nauczyciele_lista = Nauczyciele_w_szkole(szkola_obj)
     if not nauczyciele_lista:
         return None
-    etykiety = [f"{n.imie} {n.nazwisko} ({', '.join(n.przedmiot)})" for n in nauczyciele_lista]
+    etykiety = [
+        f"{n.imie} {n.nazwisko} ({', '.join(n.przedmiot) if n.przedmiot else 'brak przedmiotow'})"
+        for n in nauczyciele_lista
+    ]
     idx = menu_strzalki(f"WYBOR NAUCZYCIELA ({szkola_obj.nazwa})", etykiety)
     if idx is None:
         return None
@@ -596,7 +673,9 @@ def menu(dziennik):
             "Dodaj klase do szkoly",
             "Dodaj ucznia do klasy",
             "Dodaj Nauczyciela do szkoly",
-            "Dodaj przedmiot Nauczycielowi",
+            "Dodaj przedmiot do szkoly",
+            "Przypisz przedmioty do klasy",
+            "Przypisz przedmioty Nauczycielowi",
             "Ustaw wychowawce klasy",
             "Dodaj ocene uczniowi",
             "Wyswietl dziennik",
@@ -607,10 +686,8 @@ def menu(dziennik):
 
         wybor = menu_strzalki("Dziennoik", opcje)
         if wybor is None:
-            # ESC w menu glownym = wyjscie
             break
 
-        # 1) dodaj_szkole
         if wybor == 0:
             clear()
             nazwa = input("Podaj nazwe szkoly: ").strip()
@@ -623,7 +700,6 @@ def menu(dziennik):
                 print("Dodano szkole.")
             pause()
 
-        # 2) dodaj_klase_do_szkoly
         elif wybor == 1:
             szk = wybierz_szkole_lub_komunikat(dziennik, "Brak szkol. Najpierw dodaj szkole.")
             if szk is None:
@@ -643,7 +719,6 @@ def menu(dziennik):
                 print("Dodano klase.")
             pause()
 
-        # 3) dodaj_ucznia_do_klasy
         elif wybor == 2:
             szk = wybierz_szkole_lub_komunikat(dziennik, "Brak szkol.")
             if szk is None:
@@ -670,7 +745,6 @@ def menu(dziennik):
                 print("Dodano ucznia.")
             pause()
 
-        # 4) dodaj_Nauczyciela_do_szkoly
         elif wybor == 3:
             szk = wybierz_szkole_lub_komunikat(dziennik, "Brak szkol.")
             if szk is None:
@@ -681,18 +755,64 @@ def menu(dziennik):
             imie = input("Imie Nauczyciela: ").strip()
             nazwisko = input("Nazwisko Nauczyciela: ").strip()
             data_ur = input("Data urodzenia (DD-MM-RRRR): ").strip()
-            przedmiot = input("Przedmiot: ").strip()
 
-            if not (imie and nazwisko and data_ur and przedmiot):
-                print("Wszystkie pola sa wymagane.")
+            if not (imie and nazwisko and data_ur):
+                print("Imie, nazwisko i data urodzenia sa wymagane.")
             else:
-                n = Nauczyciel(imie, nazwisko, data_ur, przedmiot)
+                n = Nauczyciel(imie, nazwisko, data_ur)
                 dziennik.dodaj_Nauczyciela_do_szkoly(szk, n)
                 print("Dodano Nauczyciela.")
             pause()
 
-        # 5) dodaj_przedmiot_do_Nauczyciela
         elif wybor == 4:
+            szk = wybierz_szkole_lub_komunikat(dziennik, "Brak szkol.")
+            if szk is None:
+                continue
+
+            clear()
+            print(f"Szkola: {szk.nazwa}")
+            nazwa_przedmiotu = input("Podaj nazwe przedmiotu: ").strip()
+            if not nazwa_przedmiotu:
+                print("Nazwa przedmiotu nie moze byc pusta.")
+            elif nazwa_przedmiotu in szk.przedmioty:
+                print("Ten przedmiot juz istnieje w tej szkole.")
+            else:
+                dziennik.dodaj_przedmiot_do_szkoly(szk, nazwa_przedmiotu)
+                print("Dodano przedmiot do szkoly.")
+            pause()
+
+        elif wybor == 5:
+            szk = wybierz_szkole_lub_komunikat(dziennik, "Brak szkol.")
+            if szk is None:
+                continue
+
+            if not szk.przedmioty:
+                clear()
+                print("Brak przedmiotow w tej szkole. Najpierw dodaj przedmioty.")
+                pause()
+                continue
+
+            kls = wybierz_klase(szk)
+            if kls is None:
+                continue
+
+            wybrane_przedmioty = menu_wielokrotnego_wyboru(
+                f"PRZYPISZ PRZEDMIOTY DO KLASY {kls.nazwa}",
+                szk.przedmioty,
+                kls.przedmioty,
+            )
+            dziennik.ustaw_przedmioty_klasy(szk, kls, wybrane_przedmioty)
+
+            clear()
+            print("Zapisano przedmioty klasy:")
+            if kls.przedmioty:
+                for p in kls.przedmioty:
+                    print(f"  ✓ {p}")
+            else:
+                print("  (brak)")
+            pause()
+
+        elif wybor == 6:
             szk = wybierz_szkole_lub_komunikat(dziennik, "Brak szkol.")
             if szk is None:
                 continue
@@ -703,21 +823,33 @@ def menu(dziennik):
                 pause()
                 continue
 
+            if not szk.przedmioty:
+                clear()
+                print("Brak przedmiotow w tej szkole. Najpierw dodaj przedmioty.")
+                pause()
+                continue
+
             n = wybierz_Nauczyciela(szk)
             if n is None:
                 continue
 
+            wybrane_przedmioty = menu_wielokrotnego_wyboru(
+                f"PRZYPISZ PRZEDMIOTY DLA {n.imie} {n.nazwisko}",
+                szk.przedmioty,
+                n.przedmiot,
+            )
+            dziennik.ustaw_przedmioty_Nauczyciela(szk, n, wybrane_przedmioty)
+
             clear()
-            nowy_przedmiot = input("Podaj nowy przedmiot: ").strip()
-            if not nowy_przedmiot:
-                print("Przedmiot nie moze byc pusty.")
+            print("Zapisano przedmioty Nauczyciela:")
+            if n.przedmiot:
+                for p in n.przedmiot:
+                    print(f"  ✓ {p}")
             else:
-                dziennik.dodaj_przedmiot_do_Nauczyciela(n, nowy_przedmiot)
-                print("Zmieniono przedmiot Nauczyciela.")
+                print("  (brak)")
             pause()
 
-        # 6) ustaw_wychowawce_do_klasy
-        elif wybor == 5:
+        elif wybor == 7:
             szk = wybierz_szkole_lub_komunikat(dziennik, "Brak szkol.")
             if szk is None:
                 continue
@@ -751,8 +883,7 @@ def menu(dziennik):
                 print("Niepoprawny wybor.")
             pause()
 
-        # 7) dodaj_ocene_uczniowi
-        elif wybor == 6:
+        elif wybor == 8:
             clear()
             numer = input("Podaj numer ucznia: ").strip()
             u = znajdz_ucznia_po_numerze(dziennik, numer)
@@ -761,7 +892,25 @@ def menu(dziennik):
                 pause()
                 continue
 
-            przedmiot = input("Przedmiot: ").strip()
+            szkola_ucznia, klasa_ucznia = znajdz_klase_ucznia(dziennik, u)
+            if klasa_ucznia is None:
+                print("Nie znaleziono klasy ucznia.")
+                pause()
+                continue
+
+            if not klasa_ucznia.przedmioty:
+                print("Klasa ucznia nie ma przypisanych przedmiotow.")
+                pause()
+                continue
+
+            idx_przedmiotu = menu_strzalki(
+                f"WYBIERZ PRZEDMIOT DLA UCZNIA {u.imie} {u.nazwisko}",
+                klasa_ucznia.przedmioty,
+            )
+            if idx_przedmiotu is None:
+                continue
+
+            przedmiot = klasa_ucznia.przedmioty[idx_przedmiotu]
             ocena_txt = input("Ocena (1-6): ").strip()
 
             try:
@@ -773,21 +922,19 @@ def menu(dziennik):
 
             if ocena_int < 1 or ocena_int > 6:
                 print("Ocena musi byc w zakresie 1-6.")
-            elif not przedmiot:
-                print("Przedmiot nie moze byc pusty.")
+            elif szkola_ucznia and przedmiot not in szkola_ucznia.przedmioty:
+                print("Wybrany przedmiot nie nalezy do listy przedmiotow szkoly.")
             else:
                 dziennik.dodaj_ocene_uczniowi(u, przedmiot, ocena_int)
                 print("Dodano ocene.")
             pause()
 
-        # 8) wyswietl_dziennik
-        elif wybor == 7:
+        elif wybor == 9:
             clear()
             dziennik.wyswietl_dziennik()
             pause()
 
-        # 9) wyswietl_oceny_ucznia
-        elif wybor == 8:
+        elif wybor == 10:
             clear()
             numer = input("Podaj numer ucznia: ").strip()
             u = znajdz_ucznia_po_numerze(dziennik, numer)
@@ -797,8 +944,7 @@ def menu(dziennik):
                 dziennik.wyswietl_oceny_ucznia(u)
             pause()
 
-        # 10) wyswietl_Nauczycieli_szkoly
-        elif wybor == 9:
+        elif wybor == 11:
             szk = wybierz_szkole_lub_komunikat(dziennik, "Brak szkol.")
             if szk is None:
                 continue
@@ -807,29 +953,28 @@ def menu(dziennik):
             dziennik.wyswietl_Nauczycieli_szkoly(szk)
             pause()
 
-        # 11) wyjscie
-        elif wybor == 10:
+        elif wybor == 12:
             clear()
             print("Koniec programu.")
             break
 
-
-
-
 if __name__ == "__main__":
     dziennik = wczytaj_dziennik()
 
-    # Dane startowe tylko przy pierwszym uruchomieniu (gdy brak zapisanych danych)
     if not dziennik.szkoly:
         Szkola1 = Szkola("Szkola podstawowa nr 1")
         Klasa1 = Klasa("1A", "pani Kowalska")
         Uczen1 = Uczen("Jan", "Nowak", "01-01-2010", "001", "1A")
-        Nauczyciel1 = Nauczyciel("Anna", "Kowalska", "15-05-1980", "matematyka")
+        Nauczyciel1 = Nauczyciel("Anna", "Kowalska", "15-05-1980")
 
         dziennik.dodaj_szkole(Szkola1)
+        dziennik.dodaj_przedmiot_do_szkoly(Szkola1, "matematyka")
+        dziennik.dodaj_przedmiot_do_szkoly(Szkola1, "polski")
         dziennik.dodaj_klase_do_szkoly(Szkola1, Klasa1)
         dziennik.dodaj_ucznia_do_klasy(Klasa1, Uczen1)
         dziennik.dodaj_Nauczyciela_do_szkoly(Szkola1, Nauczyciel1)
+        dziennik.ustaw_przedmioty_klasy(Szkola1, Klasa1, ["matematyka", "polski"])
+        dziennik.ustaw_przedmioty_Nauczyciela(Szkola1, Nauczyciel1, ["matematyka"])
         dziennik.dodaj_ocene_uczniowi(Uczen1, "matematyka", 5)
 
     menu(dziennik)
