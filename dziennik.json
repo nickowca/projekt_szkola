@@ -1,0 +1,48 @@
+{
+  "szkoly": [
+    {
+      "nazwa": "Szkola podstawowa nr 1",
+      "klasy": [
+        {
+          "nazwa": "1A",
+          "wychowawca": "pani Kowalska",
+          "przedmioty": [
+            "matematyka",
+            "polski"
+          ],
+          "uczniowie": [
+            {
+              "imie": "Jan",
+              "nazwisko": "Nowak",
+              "data_urodzenia": "01-01-2010",
+              "numer_ucznia": "001",
+              "Klasa": "1A",
+              "oceny": [
+                {
+                  "przedmiot": "matematyka",
+                  "ocena": 5
+                }
+              ],
+              "frekwencja": {},
+              "rodzice": []
+            }
+          ]
+        }
+      ],
+      "przedmioty": [
+        "matematyka",
+        "polski"
+      ],
+      "nauczyciele": [
+        {
+          "imie": "Anna",
+          "nazwisko": "Kowalska",
+          "data_urodzenia": "15-05-1980",
+          "przedmioty": [
+            "matematyka"
+          ]
+        }
+      ]
+    }
+  ]
+}
