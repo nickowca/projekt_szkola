@@ -79,24 +79,20 @@ class Uczen(Osoba):
         self.frekwencja[data] = obecny
 
     def __str__(self):
-
         return f"Uczen: {super().__str__()}, Numer ucznia: {self.numer_ucznia}, Klasa: {self.Klasa}, Oceny: {self.oceny}"
 
 
 class Rodzic(Osoba):
-
     def __init__(self, imie, nazwisko, data_urodzenia):
         super().__init__(imie, nazwisko, data_urodzenia)
         self.uczniowie = []
 
     def dodaj_dziecko(self, Uczen):
-
         self.uczniowie.append(Uczen)
         Uczen.dodaj_rodzica(self)
 
 
 class Klasa:
-
     def __init__(self, nazwa, wychowawca):
         self.nazwa = nazwa
         self.wychowawca = wychowawca
@@ -104,21 +100,17 @@ class Klasa:
         self.przedmioty = []
 
     def dodaj_ucznia(self, Uczen):
-
         self.uczniowie.append(Uczen)
 
     def dodaj_przedmiot(self, nazwa):
-
         if nazwa and nazwa not in self.przedmioty:
             self.przedmioty.append(nazwa)
 
     def __str__(self):
-
         return f"Klasa: {self.nazwa}, Wychowawca: {self.wychowawca}, Uczniowie: {[str(Uczen) for Uczen in self.uczniowie]}"
 
 
 class Przedmiot:
-
     def __init__(self, nazwa, Nauczyciel):
         self.nazwa = nazwa
         self.Nauczyciel = Nauczyciel
@@ -141,6 +133,7 @@ class ZadanieDomowe:
         return f"Zadanie z {self.przedmiot}: {self.opis}, do: {self.data_oddania}"
 
 
+
 class Sprawdzian:
     def __init__(self, przedmiot, data, maksmalna_punktacja):
         self.przedmiot = przedmiot
@@ -154,7 +147,6 @@ class Sprawdzian:
     def __str__(self):
         return f"Sprawdzian z {self.przedmiot}, {self.data}, max: {self.maksmalna_punktacja} pkt"
 
-
 class Egzamin(Sprawdzian):
     def __init__(self, przedmiot, data, maksmalna_punktacja, typ):
         super().__init__(przedmiot, data, maksmalna_punktacja)
@@ -163,10 +155,12 @@ class Egzamin(Sprawdzian):
     def __str__(self):
         return f"Egzamin ({self.typ}) z {self.przedmiot}, {self.data}"
 
-
 class DziennikSzkolny:
     def __init__(self):
         self.szkoly = []
+        self.sprawdziany = []
+        self.egzaminy = []
+        self.zadania_domowe = []
 
     def _wyswietl_liste_ocen(self, uczen_obj, naglowek):
         print("\n" + "=" * 60)
@@ -219,6 +213,15 @@ class DziennikSzkolny:
 
     def ustaw_wychowawce_do_klasy(self, Klasa, wychowawca):
         Klasa.wychowawca = wychowawca
+
+    def dodaj_sprawdzian(self, sprawdzian):
+        self.sprawdziany.append(sprawdzian)
+
+    def dodaj_egzamin(self, egzamin):
+        self.egzaminy.append(egzamin)
+
+    def dodaj_zadanie_domowe(self, zadanie):
+        self.zadania_domowe.append(zadanie)
 
     def wyswietl_dziennik(self):
         print("\n" + "=" * 80)
@@ -321,6 +324,70 @@ class DziennikSzkolny:
                 else:
                     print("     Przedmioty: brak")
                 print(f"     Data urodzenia: {nauczyciel_obj.data_urodzenia}")
+        print("=" * 80)
+
+    def wyswietl_sprawdziany(self):
+
+        print("\n" + "=" * 80)
+        print("SPRAWDZIANY".center(80))
+        print("=" * 80)
+
+        if not self.sprawdziany:
+            print("Brak sprawdzianów")
+        else:
+            for i, sprawdzian in enumerate(self.sprawdziany, 1):
+
+                print(f"\n{i}. {sprawdzian.przedmiot}")
+                print(f"   Data: {sprawdzian.data}")
+                print(f"   Max punktów: {sprawdzian.maksmalna_punktacja}")
+                print("   Wyniki:")
+                for uczen, punkty in sprawdzian.wyniki.items():
+                    print(f"      {uczen.imie} {uczen.nazwisko} - {punkty} pkt")
+
+        print("=" * 80)
+
+    def wyswietl_egzaminy(self):
+
+        print("\n" + "=" * 80)
+        print("EGZAMINY".center(80))
+        print("=" * 80)
+        if not self.egzaminy:
+            print("Brak egzaminów")
+        else:
+            for i, egzamin in enumerate(self.egzaminy, 1):
+
+                print(f"\n{i}. {egzamin.przedmiot}")
+                print(f"   Typ: {egzamin.typ}")
+                print(f"   Data: {egzamin.data}")
+                print(f"   Max punktów: {egzamin.maksmalna_punktacja}")
+                print("   Wyniki:")
+
+                for uczen, punkty in egzamin.wyniki.items():
+                    print(f"      {uczen.imie} {uczen.nazwisko} - {punkty} pkt")
+
+        print("=" * 80)
+
+    def wyswietl_zadania_domowe(self):
+
+        print("\n" + "=" * 80)
+        print("ZADANIA DOMOWE".center(80))
+        print("=" * 80)
+
+        if not self.zadania_domowe:
+            print("Brak zadań")
+        else:
+            for i, zadanie in enumerate(self.zadania_domowe, 1):
+                print(f"\n{i}. {zadanie.przedmiot}")
+                print(f"   Treść: {zadanie.opis}")
+                print(f"   Termin: {zadanie.data_oddania}")
+                print("   Oddali:")
+
+                if not zadanie.uczniowie_ktore_oddali:
+                    print("      Nikt")
+                else:
+                    for uczen in zadanie.uczniowie_ktore_oddali:
+                        print(f"      {uczen.imie} {uczen.nazwisko}")
+
         print("=" * 80)
 
     def __str__(self):
@@ -573,7 +640,7 @@ def menu_wielokrotnego_wyboru(tytul, opcje, zaznaczone_poczatkowe=None):
 
         for i, nazwa in enumerate(opcje):
             aktywna = ">>" if i == index else "  "
-            check = "✓ " if nazwa in zaznaczone else ""
+            check = "* " if nazwa in zaznaczone else ""
             print(f"{aktywna} {check}{nazwa}")
 
         typ, val = czytaj_klawisz()
@@ -689,6 +756,9 @@ def menu(dziennik):
             "Wyswietl dziennik",
             "Wyswietl oceny ucznia",
             "Wyswietl Nauczycieli szkoly",
+            "Wyswietl sprawdziany",
+            "Wyswietl egzaminy",
+            "Wyswietl zadania domowe",
             "Wyjscie",
         ]
 
@@ -815,7 +885,7 @@ def menu(dziennik):
             print("Zapisano przedmioty klasy:")
             if kls.przedmioty:
                 for p in kls.przedmioty:
-                    print(f"  ✓ {p}")
+                    print(f"  * {p}")
             else:
                 print("  (brak)")
             pause()
@@ -852,7 +922,7 @@ def menu(dziennik):
             print("Zapisano przedmioty Nauczyciela:")
             if n.przedmiot:
                 for p in n.przedmiot:
-                    print(f"  ✓ {p}")
+                    print(f"  * {p}")
             else:
                 print("  (brak)")
             pause()
@@ -963,6 +1033,21 @@ def menu(dziennik):
 
         elif wybor == 12:
             clear()
+            dziennik.wyswietl_sprawdziany()
+            pause()
+
+        elif wybor == 13:
+            clear()
+            dziennik.wyswietl_egzaminy()
+            pause()
+
+        elif wybor == 14:
+            clear()
+            dziennik.wyswietl_zadania_domowe()
+            pause()
+
+        elif wybor == 15:
+            clear()
             print("Koniec programu.")
             break
 
@@ -970,20 +1055,274 @@ if __name__ == "__main__":
     dziennik = wczytaj_dziennik()
 
     if not dziennik.szkoly:
-        Szkola1 = Szkola("Szkola podstawowa nr 1")
-        Klasa1 = Klasa("1A", "pani Kowalska")
-        Uczen1 = Uczen("Jan", "Nowak", "01-01-2010", "001", "1A")
-        Nauczyciel1 = Nauczyciel("Anna", "Kowalska", "15-05-1980")
+        szkola1 = Szkola("Szkola Podstawowa nr 1")
 
-        dziennik.dodaj_szkole(Szkola1)
-        dziennik.dodaj_przedmiot_do_szkoly(Szkola1, "matematyka")
-        dziennik.dodaj_przedmiot_do_szkoly(Szkola1, "polski")
-        dziennik.dodaj_klase_do_szkoly(Szkola1, Klasa1)
-        dziennik.dodaj_ucznia_do_klasy(Klasa1, Uczen1)
-        dziennik.dodaj_Nauczyciela_do_szkoly(Szkola1, Nauczyciel1)
-        dziennik.ustaw_przedmioty_klasy(Szkola1, Klasa1, ["matematyka", "polski"])
-        dziennik.ustaw_przedmioty_Nauczyciela(Szkola1, Nauczyciel1, ["matematyka"])
-        dziennik.dodaj_ocene_uczniowi(Uczen1, "matematyka", 5)
+        dziennik.dodaj_szkole(szkola1)
+
+        # =========================
+        # PRZEDMIOTY
+        # =========================
+
+        przedmioty = [
+            "matematyka",
+            "polski",
+            "angielski",
+            "historia",
+            "informatyka",
+            "biologia",
+            "geografia",
+            "wf"
+        ]
+
+        for przedmiot in przedmioty:
+            dziennik.dodaj_przedmiot_do_szkoly(
+                szkola1,
+                przedmiot
+            )
+
+        # =========================
+        # NAUCZYCIELE
+        # =========================
+
+        nauczyciele = [
+            Nauczyciel("Anna", "Kowalska", "15-05-1980"),
+            Nauczyciel("Piotr", "Nowak", "10-02-1975"),
+            Nauczyciel("Maria", "Wisniewska", "21-11-1988"),
+            Nauczyciel("Jan", "Zielinski", "01-09-1970"),
+        ]
+
+        for nauczyciel in nauczyciele:
+            dziennik.dodaj_Nauczyciela_do_szkoly(
+                szkola1,
+                nauczyciel
+            )
+
+        dziennik.ustaw_przedmioty_Nauczyciela(
+            szkola1,
+            nauczyciele[0],
+            ["matematyka"]
+        )
+
+        dziennik.ustaw_przedmioty_Nauczyciela(
+            szkola1,
+            nauczyciele[1],
+            ["polski", "historia"]
+        )
+
+        dziennik.ustaw_przedmioty_Nauczyciela(
+            szkola1,
+            nauczyciele[2],
+            ["biologia", "geografia"]
+        )
+
+        dziennik.ustaw_przedmioty_Nauczyciela(
+            szkola1,
+            nauczyciele[3],
+            ["informatyka", "angielski", "wf"]
+        )
+
+        # =========================
+        # KLASY
+        # =========================
+
+        klasa1 = Klasa("1A", "Anna Kowalska")
+        klasa2 = Klasa("2B", "Piotr Nowak")
+
+        dziennik.dodaj_klase_do_szkoly(
+            szkola1,
+            klasa1
+        )
+
+        dziennik.dodaj_klase_do_szkoly(
+            szkola1,
+            klasa2
+        )
+
+        dziennik.ustaw_przedmioty_klasy(
+            szkola1,
+            klasa1,
+            przedmioty
+        )
+
+        dziennik.ustaw_przedmioty_klasy(
+            szkola1,
+            klasa2,
+            przedmioty
+        )
+
+        # =========================
+        # UCZNIOWIE
+        # =========================
+
+        uczniowie_1A = [
+            Uczen("Jan", "Nowak", "01-01-2010", "001", "1A"),
+            Uczen("Adam", "Kowalski", "02-02-2010", "002", "1A"),
+            Uczen("Kasia", "Wisniewska", "03-03-2010", "003", "1A"),
+            Uczen("Ola", "Maj", "04-04-2010", "004", "1A"),
+        ]
+
+        uczniowie_2B = [
+            Uczen("Tomasz", "Lis", "05-05-2009", "005", "2B"),
+            Uczen("Natalia", "Kurek", "06-06-2009", "006", "2B"),
+            Uczen("Michal", "Wojcik", "07-07-2009", "007", "2B"),
+        ]
+
+        for uczen in uczniowie_1A:
+            dziennik.dodaj_ucznia_do_klasy(
+                klasa1,
+                uczen
+            )
+
+        for uczen in uczniowie_2B:
+            dziennik.dodaj_ucznia_do_klasy(
+                klasa2,
+                uczen
+            )
+
+        # =========================
+        # OCENY
+        # =========================
+
+        for uczen in uczniowie_1A + uczniowie_2B:
+            dziennik.dodaj_ocene_uczniowi(
+                uczen,
+                "matematyka",
+                5
+            )
+
+            dziennik.dodaj_ocene_uczniowi(
+                uczen,
+                "polski",
+                4
+            )
+
+            dziennik.dodaj_ocene_uczniowi(
+                uczen,
+                "informatyka",
+                6
+            )
+
+            dziennik.dodaj_ocene_uczniowi(
+                uczen,
+                "angielski",
+                5
+            )
+
+            dziennik.dodaj_ocene_uczniowi(
+                uczen,
+                "historia",
+                3
+            )
+
+        # =========================
+        # FREKWENCJA
+        # =========================
+
+        for uczen in uczniowie_1A + uczniowie_2B:
+            uczen.dodaj_frekwencje(
+                "01-09-2025",
+                True
+            )
+
+            uczen.dodaj_frekwencje(
+                "02-09-2025",
+                True
+            )
+
+            uczen.dodaj_frekwencje(
+                "03-09-2025",
+                False
+            )
+
+        # =========================
+        # RODZICE
+        # =========================
+
+        rodzic1 = Rodzic(
+            "Marek",
+            "Nowak",
+            "01-01-1980"
+        )
+
+        rodzic2 = Rodzic(
+            "Joanna",
+            "Nowak",
+            "02-02-1982"
+        )
+
+        rodzic1.dodaj_dziecko(
+            uczniowie_1A[0]
+        )
+
+        rodzic2.dodaj_dziecko(
+            uczniowie_1A[0]
+        )
+
+        # =========================
+        # ZADANIA DOMOWE
+        # =========================
+
+        zadanie1 = ZadanieDomowe(
+            "matematyka",
+            "Strona 25 zadanie 1-5",
+            "10-09-2025"
+        )
+
+        zadanie1.dodaj_ucznia_ktory_oddal(
+            uczniowie_1A[0]
+        )
+
+        zadanie1.dodaj_ucznia_ktory_oddal(
+            uczniowie_1A[1]
+        )
+
+        dziennik.dodaj_zadanie_domowe(zadanie1)
+
+        sprawdzian1 = Sprawdzian(
+            "matematyka",
+            "15-09-2025",
+            50
+        )
+
+        sprawdzian1.dodaj_wynik(
+            uczniowie_1A[0],
+            45
+        )
+
+        sprawdzian1.dodaj_wynik(
+            uczniowie_1A[1],
+            39
+        )
+
+        sprawdzian1.dodaj_wynik(
+            uczniowie_1A[2],
+            50
+        )
+
+        dziennik.dodaj_sprawdzian(sprawdzian1)
+
+        egzamin1 = Egzamin(
+            "angielski",
+            "20-10-2025",
+            100,
+            "Semestralny"
+        )
+
+        egzamin1.dodaj_wynik(
+            uczniowie_2B[0],
+            88
+        )
+
+        egzamin1.dodaj_wynik(
+            uczniowie_2B[1],
+            91
+        )
+
+        dziennik.dodaj_egzamin(egzamin1)
+
+        print("Wygenerowano przykładowe dane.")
 
     menu(dziennik)
     zapisz_dziennik(dziennik)
+
+# C:\ProgramData\anaconda3\python.exe O:\Python\Project\main.py
