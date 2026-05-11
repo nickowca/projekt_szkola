@@ -1,3 +1,12 @@
+import json
+import os
+import msvcrt
+from pathlib import Path
+
+
+DATA_FILE = Path(__file__).with_name("dziennik.json")
+
+
 # Szkola - nazwa, klasy
 # osoba - imie, nazwisko, data urodzenia
 # Nauczyciel - imie, nazwisko, przedmiot
@@ -393,13 +402,100 @@ class DziennikSzkolny:
     def __str__(self):
         return f"Dziennik Szkolny: {[str(Szkola) for Szkola in self.szkoly]}"
 
-import json
-import os
-import msvcrt
-from pathlib import Path
+def sprawdzian_do_slownika(sprawdzian):
+    return {
+        "przedmiot": sprawdzian.przedmiot,
+        "data": sprawdzian.data,
+        "maksmalna_punktacja": sprawdzian.maksmalna_punktacja,
+        "wyniki": {uczen.numer_ucznia: punkty for uczen, punkty in sprawdzian.wyniki.items()},
+    }
 
 
-DATA_FILE = Path(__file__).with_name("dziennik.json")
+def egzamin_do_slownika(egzamin):
+    return {
+        **sprawdzian_do_slownika(egzamin),
+        "typ": egzamin.typ,
+    }
+
+
+def zadanie_domowe_do_slownika(zadanie):
+    return {
+        "przedmiot": zadanie.przedmiot,
+        "opis": zadanie.opis,
+        "data_oddania": zadanie.data_oddania,
+        "uczniowie_ktore_oddali": [uczen.numer_ucznia for uczen in zadanie.uczniowie_ktore_oddali],
+    }
+
+
+def dziennik_do_slownika(dziennik):
+    return {
+        "szkoly": [szkola_do_slownika(szkola_obj) for szkola_obj in dziennik.szkoly],
+        "sprawdziany": [sprawdzian_do_slownika(s) for s in dziennik.sprawdziany],
+        "egzaminy": [egzamin_do_slownika(e) for e in dziennik.egzaminy],
+        "zadania_domowe": [zadanie_domowe_do_slownika(z) for z in dziennik.zadania_domowe],
+    }
+
+
+def dziennik_ze_slownika(dane):
+    dziennik = DziennikSzkolny()
+    for szkola_dane in dane.get("szkoly", []):
+        dziennik.dodaj_szkole(szkola_ze_slownika(szkola_dane))
+    
+    for sprawdzian_dane in dane.get("sprawdziany", []):
+        sprawdzian = Sprawdzian(
+            sprawdzian_dane["przedmiot"],
+            sprawdzian_dane["data"],
+            sprawdzian_dane["maksmalna_punktacja"]
+        )
+        for numer, punkty in sprawdzian_dane["wyniki"].items():
+            uczen = znajdz_ucznia_po_numerze(dziennik, numer)
+            if uczen:
+                sprawdzian.dodaj_wynik(uczen, punkty)
+        dziennik.dodaj_sprawdzian(sprawdzian)
+    
+    for egzamin_dane in dane.get("egzaminy", []):
+        egzamin = Egzamin(
+            egzamin_dane["przedmiot"],
+            egzamin_dane["data"],
+            egzamin_dane["maksmalna_punktacja"],
+            egzamin_dane["typ"]
+        )
+        for numer, punkty in egzamin_dane["wyniki"].items():
+            uczen = znajdz_ucznia_po_numerze(dziennik, numer)
+            if uczen:
+                egzamin.dodaj_wynik(uczen, punkty)
+        dziennik.dodaj_egzamin(egzamin)
+    
+    for zadanie_dane in dane.get("zadania_domowe", []):
+        zadanie = ZadanieDomowe(
+            zadanie_dane["przedmiot"],
+            zadanie_dane["opis"],
+            zadanie_dane["data_oddania"]
+        )
+        for numer in zadanie_dane["uczniowie_ktore_oddali"]:
+            uczen = znajdz_ucznia_po_numerze(dziennik, numer)
+            if uczen:
+                zadanie.dodaj_ucznia_ktory_oddal(uczen)
+        dziennik.dodaj_zadanie_domowe(zadanie)
+    
+    return dziennik
+
+
+def zapisz_dziennik(dziennik, sciezka=DATA_FILE):
+    with open(sciezka, "w", encoding="utf-8") as plik:
+        json.dump(dziennik_do_slownika(dziennik), plik, ensure_ascii=False, indent=2)
+
+
+def wczytaj_dziennik(sciezka=DATA_FILE):
+    if not Path(sciezka).exists():
+        return DziennikSzkolny()
+
+    try:
+        with open(sciezka, "r", encoding="utf-8") as plik:
+            dane = json.load(plik)
+        return dziennik_ze_slownika(dane)
+    except (json.JSONDecodeError, OSError, TypeError, ValueError):
+        return DziennikSzkolny()
 
 
 def uczen_do_slownika(uczen_obj):
@@ -550,35 +646,6 @@ def szkola_ze_slownika(dane):
         szkola_obj.dodaj_nauczyciela(nauczyciel_ze_slownika(nauczyciel_dane))
     return szkola_obj
 
-
-def dziennik_do_slownika(dziennik):
-    return {
-        "szkoly": [szkola_do_slownika(szkola_obj) for szkola_obj in dziennik.szkoly],
-    }
-
-
-def dziennik_ze_slownika(dane):
-    dziennik = DziennikSzkolny()
-    for szkola_dane in dane.get("szkoly", []):
-        dziennik.dodaj_szkole(szkola_ze_slownika(szkola_dane))
-    return dziennik
-
-
-def zapisz_dziennik(dziennik, sciezka=DATA_FILE):
-    with open(sciezka, "w", encoding="utf-8") as plik:
-        json.dump(dziennik_do_slownika(dziennik), plik, ensure_ascii=False, indent=2)
-
-
-def wczytaj_dziennik(sciezka=DATA_FILE):
-    if not Path(sciezka).exists():
-        return DziennikSzkolny()
-
-    try:
-        with open(sciezka, "r", encoding="utf-8") as plik:
-            dane = json.load(plik)
-        return dziennik_ze_slownika(dane)
-    except (json.JSONDecodeError, OSError, TypeError, ValueError):
-        return DziennikSzkolny()
 
 
 def clear():
@@ -1324,5 +1391,7 @@ if __name__ == "__main__":
 
     menu(dziennik)
     zapisz_dziennik(dziennik)
+
+# C:\ProgramData\anaconda3\python.exe "C:\Users\michalskif\PycharmProjects\projekt_szkola\main.py"
 
 # C:\ProgramData\anaconda3\python.exe O:\Python\Project\main.py
