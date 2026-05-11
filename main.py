@@ -111,6 +111,7 @@ class Klasa:
 
 
 class Przedmiot:
+
     def __init__(self, nazwa, Nauczyciel):
         self.nazwa = nazwa
         self.Nauczyciel = Nauczyciel
