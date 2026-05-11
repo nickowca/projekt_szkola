@@ -79,20 +79,24 @@ class Uczen(Osoba):
         self.frekwencja[data] = obecny
 
     def __str__(self):
+
         return f"Uczen: {super().__str__()}, Numer ucznia: {self.numer_ucznia}, Klasa: {self.Klasa}, Oceny: {self.oceny}"
 
 
 class Rodzic(Osoba):
+
     def __init__(self, imie, nazwisko, data_urodzenia):
         super().__init__(imie, nazwisko, data_urodzenia)
         self.uczniowie = []
 
     def dodaj_dziecko(self, Uczen):
+
         self.uczniowie.append(Uczen)
         Uczen.dodaj_rodzica(self)
 
 
 class Klasa:
+
     def __init__(self, nazwa, wychowawca):
         self.nazwa = nazwa
         self.wychowawca = wychowawca
@@ -100,13 +104,16 @@ class Klasa:
         self.przedmioty = []
 
     def dodaj_ucznia(self, Uczen):
+
         self.uczniowie.append(Uczen)
 
     def dodaj_przedmiot(self, nazwa):
+
         if nazwa and nazwa not in self.przedmioty:
             self.przedmioty.append(nazwa)
 
     def __str__(self):
+
         return f"Klasa: {self.nazwa}, Wychowawca: {self.wychowawca}, Uczniowie: {[str(Uczen) for Uczen in self.uczniowie]}"
 
 
