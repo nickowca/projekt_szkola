@@ -110,10 +110,11 @@ class Przedmiot:
 
 
 class ZadanieDomowe:
-    def __init__(self, przedmiot, opis, data_oddania):
+    def __init__(self, przedmiot, opis, data_oddania, klasa):
         self.przedmiot = przedmiot
         self.opis = opis
         self.data_oddania = data_oddania
+        self.klasa = klasa
         self.uczniowie_ktore_oddali = []
 
     def dodaj_ucznia_ktory_oddal(self, Uczen):
@@ -124,10 +125,11 @@ class ZadanieDomowe:
 
 
 class Sprawdzian:
-    def __init__(self, przedmiot, data, maksmalna_punktacja):
+    def __init__(self, przedmiot, data, maksmalna_punktacja, klasa):
         self.przedmiot = przedmiot
         self.data = data
         self.maksmalna_punktacja = maksmalna_punktacja
+        self.klasa = klasa
         self.wyniki = {}
 
     def dodaj_wynik(self, Uczen, punkty):
@@ -138,8 +140,8 @@ class Sprawdzian:
 
 
 class Egzamin(Sprawdzian):
-    def __init__(self, przedmiot, data, maksmalna_punktacja, typ):
-        super().__init__(przedmiot, data, maksmalna_punktacja)
+    def __init__(self, przedmiot, data, maksmalna_punktacja, typ, klasa):
+        super().__init__(przedmiot, data, maksmalna_punktacja, klasa)
         self.typ = typ
 
     def __str__(self):
@@ -295,9 +297,39 @@ class DziennikSzkolny:
         if not Klasa.uczniowie:
             print("  Brak uczniów w klasie")
         else:
-            for Uczen in Klasa.uczniowie:
-                srednia = self.oblicz_srednia_ocen_ucznia(Uczen)
-                print(f"  {Uczen.imie} {Uczen.nazwisko:.<30} {srednia}")
+            lista = []
+            for uczen in Klasa.uczniowie:
+                srednia = self.oblicz_srednia_ocen_ucznia(uczen)
+                lista.append((srednia, uczen.nazwisko, uczen.imie, uczen))
+
+            lista.sort(key=lambda x: (-x[0], x[1], x[2]))
+
+            for srednia, _, _, uczen in lista:
+                print(f"  {uczen.imie} {uczen.nazwisko:.<30} {srednia}")
+        print("=" * 80)
+
+    def wyswietl_srednie_w_szkole(self, Szkola):
+        print("\n" + "=" * 80)
+        print(f"RANKING ŚREDNICH W SZKOLE: {Szkola.nazwa}".center(80))
+        print("=" * 80)
+
+        uczniowie = []
+        for klasa in Szkola.klasy:
+            if isinstance(klasa, Klasa):
+                for uczen in klasa.uczniowie:
+                    srednia = self.oblicz_srednia_ocen_ucznia(uczen)
+                    uczniowie.append((srednia, uczen.nazwisko, uczen.imie, klasa.nazwa, uczen))
+
+        if not uczniowie:
+            print("  Brak uczniów w tej szkole")
+            print("=" * 80)
+            return
+
+        uczniowie.sort(key=lambda x: (-x[0], x[1], x[2]))
+
+        for srednia, nazwisko, imie, nazwa_klasy, uczen in uczniowie:
+            print(f"  {imie} {nazwisko:.<25} Klasa: {nazwa_klasy:.<6}  Średnia: {srednia}")
+
         print("=" * 80)
 
     def wyswietl_Nauczycieli_szkoly(self, Szkola):
@@ -329,6 +361,7 @@ class DziennikSzkolny:
             for i, sprawdzian in enumerate(self.sprawdziany, 1):
 
                 print(f"\n{i}. {sprawdzian.przedmiot}")
+                print(f"   Klasa: {sprawdzian.klasa}")
                 print(f"   Data: {sprawdzian.data}")
                 print(f"   Max punktów: {sprawdzian.maksmalna_punktacja}")
                 print("   Wyniki:")
@@ -348,6 +381,7 @@ class DziennikSzkolny:
             for i, egzamin in enumerate(self.egzaminy, 1):
 
                 print(f"\n{i}. {egzamin.przedmiot}")
+                print(f"   Klasa: {egzamin.klasa}")
                 print(f"   Typ: {egzamin.typ}")
                 print(f"   Data: {egzamin.data}")
                 print(f"   Max punktów: {egzamin.maksmalna_punktacja}")
@@ -369,6 +403,7 @@ class DziennikSzkolny:
         else:
             for i, zadanie in enumerate(self.zadania_domowe, 1):
                 print(f"\n{i}. {zadanie.przedmiot}")
+                print(f"   Klasa: {zadanie.klasa}")
                 print(f"   Treść: {zadanie.opis}")
                 print(f"   Termin: {zadanie.data_oddania}")
                 print("   Oddali:")
@@ -390,6 +425,7 @@ def sprawdzian_do_slownika(sprawdzian):
         "przedmiot": sprawdzian.przedmiot,
         "data": sprawdzian.data,
         "maksmalna_punktacja": sprawdzian.maksmalna_punktacja,
+        "klasa": sprawdzian.klasa,
         "wyniki": {uczen.numer_ucznia: punkty for uczen, punkty in sprawdzian.wyniki.items()},
     }
 
@@ -406,6 +442,7 @@ def zadanie_domowe_do_slownika(zadanie):
         "przedmiot": zadanie.przedmiot,
         "opis": zadanie.opis,
         "data_oddania": zadanie.data_oddania,
+        "klasa": zadanie.klasa,
         "uczniowie_ktore_oddali": [uczen.numer_ucznia for uczen in zadanie.uczniowie_ktore_oddali],
     }
 
@@ -428,7 +465,8 @@ def dziennik_ze_slownika(dane):
         sprawdzian = Sprawdzian(
             sprawdzian_dane["przedmiot"],
             sprawdzian_dane["data"],
-            sprawdzian_dane["maksmalna_punktacja"]
+            sprawdzian_dane["maksmalna_punktacja"],
+            sprawdzian_dane.get("klasa")
         )
         for numer, punkty in sprawdzian_dane["wyniki"].items():
             uczen = znajdz_ucznia_po_numerze(dziennik, numer)
@@ -441,7 +479,8 @@ def dziennik_ze_slownika(dane):
             egzamin_dane["przedmiot"],
             egzamin_dane["data"],
             egzamin_dane["maksmalna_punktacja"],
-            egzamin_dane["typ"]
+            egzamin_dane["typ"],
+            egzamin_dane.get("klasa")
         )
         for numer, punkty in egzamin_dane["wyniki"].items():
             uczen = znajdz_ucznia_po_numerze(dziennik, numer)
@@ -453,7 +492,8 @@ def dziennik_ze_slownika(dane):
         zadanie = ZadanieDomowe(
             zadanie_dane["przedmiot"],
             zadanie_dane["opis"],
-            zadanie_dane["data_oddania"]
+            zadanie_dane["data_oddania"],
+            zadanie_dane.get("klasa")
         )
         for numer in zadanie_dane["uczniowie_ktore_oddali"]:
             uczen = znajdz_ucznia_po_numerze(dziennik, numer)
@@ -800,12 +840,21 @@ def menu(dziennik):
             "Dodaj ucznia do klasy",
             "Dodaj Nauczyciela do szkoly",
             "Dodaj przedmiot do szkoly",
+            "Dodaj sprawdzian",
+            "Dodaj egzamin",
+            "Dodaj zadanie domowe",
             "Przypisz przedmioty do klasy",
             "Przypisz przedmioty Nauczycielowi",
             "Ustaw wychowawce klasy",
             "Dodaj ocene uczniowi",
             "Wyswietl dziennik",
             "Wyswietl oceny ucznia",
+            "Wyswietl historie ocen ucznia",
+            "Wyswietl frekwencje ucznia",
+            "Wyswietl rodzicow ucznia",
+            "Wyswietl srednia ucznia",
+            "Wyswietl srednie klasy (malejaco)",
+            "Wyswietl srednie szkoly (malejaco)",
             "Wyswietl Nauczycieli szkoly",
             "Wyswietl sprawdziany",
             "Wyswietl egzaminy",
@@ -813,7 +862,7 @@ def menu(dziennik):
             "Wyjscie",
         ]
 
-        wybor = menu_strzalki("Dziennik", opcje)
+        wybor = menu_strzalki("Dziennoik", opcje)
         if wybor is None:
             break
 
@@ -914,6 +963,67 @@ def menu(dziennik):
             szk = wybierz_szkole_lub_komunikat(dziennik, "Brak szkol.")
             if szk is None:
                 continue
+            kls = wybierz_klase(szk)
+            if kls is None:
+                continue
+            clear()
+            print(f"Szkola: {szk.nazwa}, Klasa: {kls.nazwa}")
+            przedmiot = input("Przedmiot: ").strip()
+            data = input("Data (DD-MM-RRRR): ").strip()
+            max_pkt = input("Maksymalna liczba punktów: ").strip()
+            if not (przedmiot and data and max_pkt):
+                print("Wszystkie pola sa wymagane.")
+            else:
+                sprawdzian = Sprawdzian(przedmiot, data, int(max_pkt), kls.nazwa)
+                dziennik.dodaj_sprawdzian(sprawdzian)
+                print("Dodano sprawdzian.")
+            pause()
+
+        elif wybor == 6:
+            szk = wybierz_szkole_lub_komunikat(dziennik, "Brak szkol.")
+            if szk is None:
+                continue
+            kls = wybierz_klase(szk)
+            if kls is None:
+                continue
+            clear()
+            print(f"Szkola: {szk.nazwa}, Klasa: {kls.nazwa}")
+            przedmiot = input("Przedmiot: ").strip()
+            data = input("Data (DD-MM-RRRR): ").strip()
+            max_pkt = input("Maksymalna liczba punktów: ").strip()
+            typ = input("Typ egzaminu: ").strip()
+            if not (przedmiot and data and max_pkt and typ):
+                print("Wszystkie pola sa wymagane.")
+            else:
+                egzamin = Egzamin(przedmiot, data, int(max_pkt), typ, kls.nazwa)
+                dziennik.dodaj_egzamin(egzamin)
+                print("Dodano egzamin.")
+            pause()
+
+        elif wybor == 7:
+            szk = wybierz_szkole_lub_komunikat(dziennik, "Brak szkol.")
+            if szk is None:
+                continue
+            kls = wybierz_klase(szk)
+            if kls is None:
+                continue
+            clear()
+            print(f"Szkola: {szk.nazwa}, Klasa: {kls.nazwa}")
+            przedmiot = input("Przedmiot: ").strip()
+            opis = input("Opis: ").strip()
+            data_oddania = input("Data oddania (DD-MM-RRRR): ").strip()
+            if not (przedmiot and opis and data_oddania):
+                print("Wszystkie pola sa wymagane.")
+            else:
+                zadanie = ZadanieDomowe(przedmiot, opis, data_oddania, kls.nazwa)
+                dziennik.dodaj_zadanie_domowe(zadanie)
+                print("Dodano zadanie domowe.")
+            pause()
+
+        elif wybor == 8:
+            szk = wybierz_szkole_lub_komunikat(dziennik, "Brak szkol.")
+            if szk is None:
+                continue
 
             if not szk.przedmioty:
                 clear()
@@ -941,7 +1051,7 @@ def menu(dziennik):
                 print("  (brak)")
             pause()
 
-        elif wybor == 6:
+        elif wybor == 9:
             szk = wybierz_szkole_lub_komunikat(dziennik, "Brak szkol.")
             if szk is None:
                 continue
@@ -978,7 +1088,7 @@ def menu(dziennik):
                 print("  (brak)")
             pause()
 
-        elif wybor == 7:
+        elif wybor == 10:
             szk = wybierz_szkole_lub_komunikat(dziennik, "Brak szkol.")
             if szk is None:
                 continue
@@ -1012,7 +1122,7 @@ def menu(dziennik):
                 print("Niepoprawny wybor.")
             pause()
 
-        elif wybor == 8:
+        elif wybor == 11:
             clear()
             numer = input("Podaj numer ucznia: ").strip()
             u = znajdz_ucznia_po_numerze(dziennik, numer)
@@ -1058,12 +1168,12 @@ def menu(dziennik):
                 print("Dodano ocene.")
             pause()
 
-        elif wybor == 9:
+        elif wybor == 12:
             clear()
             dziennik.wyswietl_dziennik()
             pause()
 
-        elif wybor == 10:
+        elif wybor == 13:
             clear()
             numer = input("Podaj numer ucznia: ").strip()
             u = znajdz_ucznia_po_numerze(dziennik, numer)
@@ -1073,7 +1183,69 @@ def menu(dziennik):
                 dziennik.wyswietl_oceny_ucznia(u)
             pause()
 
-        elif wybor == 11:
+        elif wybor == 14:
+            clear()
+            numer = input("Podaj numer ucznia: ").strip()
+            u = znajdz_ucznia_po_numerze(dziennik, numer)
+            if u is None:
+                print("Nie znaleziono ucznia.")
+            else:
+                dziennik.wyswietl_historia_ocen_ucznia(u)
+            pause()
+
+        elif wybor == 15:
+            clear()
+            numer = input("Podaj numer ucznia: ").strip()
+            u = znajdz_ucznia_po_numerze(dziennik, numer)
+            if u is None:
+                print("Nie znaleziono ucznia.")
+            else:
+                dziennik.wyswietl_frekwencje_ucznia(u)
+            pause()
+
+        elif wybor == 16:
+            clear()
+            numer = input("Podaj numer ucznia: ").strip()
+            u = znajdz_ucznia_po_numerze(dziennik, numer)
+            if u is None:
+                print("Nie znaleziono ucznia.")
+            else:
+                dziennik.wyswietl_rodzicow_ucznia(u)
+            pause()
+
+        elif wybor == 17:
+            clear()
+            numer = input("Podaj numer ucznia: ").strip()
+            u = znajdz_ucznia_po_numerze(dziennik, numer)
+            if u is None:
+                print("Nie znaleziono ucznia.")
+            else:
+                dziennik.wyswietl_srednia_ocen_ucznia(u)
+            pause()
+
+        elif wybor == 18:
+            szk = wybierz_szkole_lub_komunikat(dziennik, "Brak szkol.")
+            if szk is None:
+                continue
+
+            kls = wybierz_klase(szk)
+            if kls is None:
+                continue
+
+            clear()
+            dziennik.wyswietl_srednie_oceny_klasy(kls)
+            pause()
+
+        elif wybor == 19:
+            szk = wybierz_szkole_lub_komunikat(dziennik, "Brak szkol.")
+            if szk is None:
+                continue
+
+            clear()
+            dziennik.wyswietl_srednie_w_szkole(szk)
+            pause()
+
+        elif wybor == 20:
             szk = wybierz_szkole_lub_komunikat(dziennik, "Brak szkol.")
             if szk is None:
                 continue
@@ -1082,22 +1254,22 @@ def menu(dziennik):
             dziennik.wyswietl_Nauczycieli_szkoly(szk)
             pause()
 
-        elif wybor == 12:
+        elif wybor == 21:
             clear()
             dziennik.wyswietl_sprawdziany()
             pause()
 
-        elif wybor == 13:
+        elif wybor == 22:
             clear()
             dziennik.wyswietl_egzaminy()
             pause()
 
-        elif wybor == 14:
+        elif wybor == 23:
             clear()
             dziennik.wyswietl_zadania_domowe()
             pause()
 
-        elif wybor == 15:
+        elif wybor == 24:
             clear()
             print("Koniec programu.")
             break
@@ -1285,7 +1457,8 @@ if __name__ == "__main__":
         zadanie1 = ZadanieDomowe(
             "matematyka",
             "Strona 25 zadanie 1-5",
-            "10-09-2025"
+            "10-09-2025",
+            "1A"
         )
 
         zadanie1.dodaj_ucznia_ktory_oddal(
@@ -1301,7 +1474,8 @@ if __name__ == "__main__":
         sprawdzian1 = Sprawdzian(
             "matematyka",
             "15-09-2025",
-            50
+            50,
+            "1A"
         )
 
         sprawdzian1.dodaj_wynik(
@@ -1325,7 +1499,8 @@ if __name__ == "__main__":
             "angielski",
             "20-10-2025",
             100,
-            "Semestralny"
+            "Semestralny",
+            "2B"
         )
 
         egzamin1.dodaj_wynik(
@@ -1339,6 +1514,8 @@ if __name__ == "__main__":
         )
 
         dziennik.dodaj_egzamin(egzamin1)
+
+        print("Wygenerowano przykładowe dane.")
 
     menu(dziennik)
     zapisz_dziennik(dziennik)
