@@ -3,8 +3,7 @@ import os
 import msvcrt
 from pathlib import Path
 
-
-DATA_FILE = Path(__file__).with_name("dziennik.json")
+DATA_FILE = "dziennik.json"
 
 
 # Szkola - nazwa, klasy
@@ -142,7 +141,6 @@ class ZadanieDomowe:
         return f"Zadanie z {self.przedmiot}: {self.opis}, do: {self.data_oddania}"
 
 
-
 class Sprawdzian:
     def __init__(self, przedmiot, data, maksmalna_punktacja):
         self.przedmiot = przedmiot
@@ -156,6 +154,7 @@ class Sprawdzian:
     def __str__(self):
         return f"Sprawdzian z {self.przedmiot}, {self.data}, max: {self.maksmalna_punktacja} pkt"
 
+
 class Egzamin(Sprawdzian):
     def __init__(self, przedmiot, data, maksmalna_punktacja, typ):
         super().__init__(przedmiot, data, maksmalna_punktacja)
@@ -163,6 +162,7 @@ class Egzamin(Sprawdzian):
 
     def __str__(self):
         return f"Egzamin ({self.typ}) z {self.przedmiot}, {self.data}"
+
 
 class DziennikSzkolny:
     def __init__(self):
@@ -402,6 +402,7 @@ class DziennikSzkolny:
     def __str__(self):
         return f"Dziennik Szkolny: {[str(Szkola) for Szkola in self.szkoly]}"
 
+
 def sprawdzian_do_slownika(sprawdzian):
     return {
         "przedmiot": sprawdzian.przedmiot,
@@ -429,7 +430,7 @@ def zadanie_domowe_do_slownika(zadanie):
 
 def dziennik_do_slownika(dziennik):
     return {
-        "szkoly": [szkola_do_slownika(szkola_obj) for szkola_obj in dziennik.szkoly],
+        "szkoly": [szkola_do_slownika(szkoly) for szkoly in dziennik.szkoly],
         "sprawdziany": [sprawdzian_do_slownika(s) for s in dziennik.sprawdziany],
         "egzaminy": [egzamin_do_slownika(e) for e in dziennik.egzaminy],
         "zadania_domowe": [zadanie_domowe_do_slownika(z) for z in dziennik.zadania_domowe],
@@ -440,7 +441,7 @@ def dziennik_ze_slownika(dane):
     dziennik = DziennikSzkolny()
     for szkola_dane in dane.get("szkoly", []):
         dziennik.dodaj_szkole(szkola_ze_slownika(szkola_dane))
-    
+
     for sprawdzian_dane in dane.get("sprawdziany", []):
         sprawdzian = Sprawdzian(
             sprawdzian_dane["przedmiot"],
@@ -452,7 +453,7 @@ def dziennik_ze_slownika(dane):
             if uczen:
                 sprawdzian.dodaj_wynik(uczen, punkty)
         dziennik.dodaj_sprawdzian(sprawdzian)
-    
+
     for egzamin_dane in dane.get("egzaminy", []):
         egzamin = Egzamin(
             egzamin_dane["przedmiot"],
@@ -465,7 +466,7 @@ def dziennik_ze_slownika(dane):
             if uczen:
                 egzamin.dodaj_wynik(uczen, punkty)
         dziennik.dodaj_egzamin(egzamin)
-    
+
     for zadanie_dane in dane.get("zadania_domowe", []):
         zadanie = ZadanieDomowe(
             zadanie_dane["przedmiot"],
@@ -477,7 +478,7 @@ def dziennik_ze_slownika(dane):
             if uczen:
                 zadanie.dodaj_ucznia_ktory_oddal(uczen)
         dziennik.dodaj_zadanie_domowe(zadanie)
-    
+
     return dziennik
 
 
@@ -607,6 +608,7 @@ def nauczyciel_do_slownika(nauczyciel_obj):
         "przedmioty": nauczyciel_obj.przedmiot,
     }
 
+
 def nauczyciel_ze_slownika(dane):
     przedmioty = dane.get("przedmioty", dane.get("przedmiot", []))
     if isinstance(przedmioty, str):
@@ -623,6 +625,7 @@ def nauczyciel_ze_slownika(dane):
     )
     nauczyciel_obj.przedmiot = przedmioty
     return nauczyciel_obj
+
 
 def szkola_do_slownika(szkola_obj):
     return {
@@ -645,7 +648,6 @@ def szkola_ze_slownika(dane):
     for nauczyciel_dane in dane.get("nauczyciele", []):
         szkola_obj.dodaj_nauczyciela(nauczyciel_ze_slownika(nauczyciel_dane))
     return szkola_obj
-
 
 
 def clear():
@@ -1118,6 +1120,7 @@ def menu(dziennik):
             print("Koniec programu.")
             break
 
+
 if __name__ == "__main__":
     dziennik = wczytaj_dziennik()
 
@@ -1125,10 +1128,6 @@ if __name__ == "__main__":
         szkola1 = Szkola("Szkola Podstawowa nr 1")
 
         dziennik.dodaj_szkole(szkola1)
-
-        # =========================
-        # PRZEDMIOTY
-        # =========================
 
         przedmioty = [
             "matematyka",
@@ -1146,10 +1145,6 @@ if __name__ == "__main__":
                 szkola1,
                 przedmiot
             )
-
-        # =========================
-        # NAUCZYCIELE
-        # =========================
 
         nauczyciele = [
             Nauczyciel("Anna", "Kowalska", "15-05-1980"),
@@ -1188,10 +1183,6 @@ if __name__ == "__main__":
             ["informatyka", "angielski", "wf"]
         )
 
-        # =========================
-        # KLASY
-        # =========================
-
         klasa1 = Klasa("1A", "Anna Kowalska")
         klasa2 = Klasa("2B", "Piotr Nowak")
 
@@ -1217,10 +1208,6 @@ if __name__ == "__main__":
             przedmioty
         )
 
-        # =========================
-        # UCZNIOWIE
-        # =========================
-
         uczniowie_1A = [
             Uczen("Jan", "Nowak", "01-01-2010", "001", "1A"),
             Uczen("Adam", "Kowalski", "02-02-2010", "002", "1A"),
@@ -1245,10 +1232,6 @@ if __name__ == "__main__":
                 klasa2,
                 uczen
             )
-
-        # =========================
-        # OCENY
-        # =========================
 
         for uczen in uczniowie_1A + uczniowie_2B:
             dziennik.dodaj_ocene_uczniowi(
@@ -1281,10 +1264,6 @@ if __name__ == "__main__":
                 3
             )
 
-        # =========================
-        # FREKWENCJA
-        # =========================
-
         for uczen in uczniowie_1A + uczniowie_2B:
             uczen.dodaj_frekwencje(
                 "01-09-2025",
@@ -1300,10 +1279,6 @@ if __name__ == "__main__":
                 "03-09-2025",
                 False
             )
-
-        # =========================
-        # RODZICE
-        # =========================
 
         rodzic1 = Rodzic(
             "Marek",
@@ -1324,10 +1299,6 @@ if __name__ == "__main__":
         rodzic2.dodaj_dziecko(
             uczniowie_1A[0]
         )
-
-        # =========================
-        # ZADANIA DOMOWE
-        # =========================
 
         zadanie1 = ZadanieDomowe(
             "matematyka",
@@ -1392,6 +1363,6 @@ if __name__ == "__main__":
     menu(dziennik)
     zapisz_dziennik(dziennik)
 
-# C:\ProgramData\anaconda3\python.exe "C:\Users\michalskif\PycharmProjects\projekt_szkola\main.py"
 
+# C:\ProgramData\anaconda3\python.exe "C:\Users\michalskif\PycharmProjects\projekt_szkola\main.py"
 # C:\ProgramData\anaconda3\python.exe O:\Python\Project\main.py
