@@ -5,24 +5,6 @@ from pathlib import Path
 
 DATA_FILE = "dziennik.json"
 
-
-# Szkola - nazwa, klasy
-# osoba - imie, nazwisko, data urodzenia
-# Nauczyciel - imie, nazwisko, przedmiot
-# Uczen - Osoba + numer ucznia, Klasa, slownik ocen
-# Klasa - nazwa, lista uzniow, wychowawca
-# przedmiot - nazwa, Nauczyciel
-# ocena - przedmiot, ocena
-# DziennikSzkolny Klasa zarzadzajaca calym systemem
-
-# Historia ocen ucznia
-# Rodzice uczniów
-# Przedmioty w klasie
-# Frekwencja uczniów
-# Zadania domowe
-# Sprawdziany i egzaminy
-# Automatyczne obliczanie średnich ocen
-
 class Szkola:
     def __init__(self, nazwa):
         self.nazwa = nazwa
@@ -831,7 +813,7 @@ def menu(dziennik):
             "Wyjscie",
         ]
 
-        wybor = menu_strzalki("Dziennoik", opcje)
+        wybor = menu_strzalki("Dziennik", opcje)
         if wybor is None:
             break
 
@@ -1357,8 +1339,6 @@ if __name__ == "__main__":
         )
 
         dziennik.dodaj_egzamin(egzamin1)
-
-        print("Wygenerowano przykładowe dane.")
 
     menu(dziennik)
     zapisz_dziennik(dziennik)
